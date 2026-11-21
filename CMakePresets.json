@@ -1,0 +1,64 @@
+{
+	"version": 3,
+	"cmakeMinimumRequired": { "major": 3, "minor": 22, "patch": 0 },
+	"configurePresets": [
+		{
+			"name": "debug",
+			"displayName": "Debug (plain)",
+			"binaryDir": "${sourceDir}/build/debug",
+			"cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+		},
+		{
+			"name": "asan",
+			"displayName": "Debug + AddressSanitizer + UndefinedBehaviorSanitizer",
+			"binaryDir": "${sourceDir}/build/asan",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug",
+				"SIM_SANITIZER": "address,undefined",
+				"SIM_TEST_ENV": "LD_PRELOAD="
+			}
+		},
+		{
+			"name": "tsan",
+			"displayName": "Debug + ThreadSanitizer",
+			"inherits": "debug",
+			"binaryDir": "${sourceDir}/build/tsan",
+			"cacheVariables": {
+				"SIM_SANITIZER": "thread",
+				"SIM_TEST_ENV": "LD_PRELOAD=",
+				"SIM_TEST_WRAPPER": "setarch;-R"
+			}
+		},
+		{
+			"name": "valgrind",
+			"displayName": "Debug + valgrind memcheck",
+			"inherits": "debug",
+			"binaryDir": "${sourceDir}/build/valgrind",
+			"cacheVariables": { "SIM_VALGRIND": "ON" }
+		},
+		{
+			"name": "helgrind",
+			"displayName": "Debug + valgrind helgrind",
+			"inherits": "debug",
+			"binaryDir": "${sourceDir}/build/helgrind",
+			"cacheVariables": {
+				"SIM_VALGRIND": "ON",
+				"SIM_VALGRIND_TOOL": "helgrind"
+			}
+		}
+	],
+	"buildPresets": [
+		{ "name": "debug", "configurePreset": "debug" },
+		{ "name": "asan", "configurePreset": "asan" },
+		{ "name": "tsan", "configurePreset": "tsan" },
+		{ "name": "valgrind", "configurePreset": "valgrind" },
+		{ "name": "helgrind", "configurePreset": "helgrind" }
+	],
+	"testPresets": [
+		{ "name": "debug", "configurePreset": "debug", "output": { "outputOnFailure": true } },
+		{ "name": "asan", "configurePreset": "asan", "output": { "outputOnFailure": true } },
+		{ "name": "tsan", "configurePreset": "tsan", "output": { "outputOnFailure": true } },
+		{ "name": "valgrind", "configurePreset": "valgrind", "output": { "outputOnFailure": true } },
+		{ "name": "helgrind", "configurePreset": "helgrind", "output": { "outputOnFailure": true } }
+	]
+}
