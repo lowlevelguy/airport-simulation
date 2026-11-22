@@ -20,7 +20,7 @@ void queue_init(queue_t* q, void* buffer, uint8_t buffer_alignment, uint8_t buff
 	q->ring_alignment = buffer_alignment;
 	q->ring_capacity = buffer_capacity;
 
-	pthread_mutex_init(&q->mutex, NULL);
+	(void)pthread_mutex_init(&q->mutex, NULL);
 	q->push_idx = 0;
 	q->pop_idx = 0;
 	q->size = 0;
@@ -31,7 +31,7 @@ queue_status_e queue_push(queue_t* q, const void* item, uint8_t item_size) {
 	assert(item != NULL);
 	assert(item_size == q->ring_alignment);
 
-	pthread_mutex_lock(&q->mutex);
+	(void)pthread_mutex_lock(&q->mutex);
 	
 	// Return error if queue is full
 	if (q->size >= q->ring_capacity) {
@@ -43,7 +43,7 @@ queue_status_e queue_push(queue_t* q, const void* item, uint8_t item_size) {
 	q->push_idx = U8((q->push_idx + 1) % q->ring_capacity);
 	q->size++;
 
-	pthread_mutex_unlock(&q->mutex);
+	(void)pthread_mutex_unlock(&q->mutex);
 
 	return QUEUE_STATUS_OK;
 }
@@ -53,7 +53,7 @@ queue_status_e queue_pop(queue_t* q, void* item, uint8_t item_size) {
 	assert(item != NULL);
 	assert(item_size == q->ring_alignment);
 
-	pthread_mutex_lock(&q->mutex);
+	(void)pthread_mutex_lock(&q->mutex);
 
 	// Return error if queue is empty
 	if (q->size == 0) {
@@ -65,7 +65,7 @@ queue_status_e queue_pop(queue_t* q, void* item, uint8_t item_size) {
 	q->pop_idx = U8((q->pop_idx + 1) % q->ring_capacity);
 	q->size--;
 
-	pthread_mutex_unlock(&q->mutex);
+	(void)pthread_mutex_unlock(&q->mutex);
 
 	return QUEUE_STATUS_OK;
 }
@@ -77,7 +77,7 @@ void queue_deinit(queue_t* q) {
 	q->ring_alignment = 0;
 	q->ring_capacity = 0;
 
-	pthread_mutex_destroy(&q->mutex);
+	(void)pthread_mutex_destroy(&q->mutex);
 	
 	q->size = 0;
 	q->push_idx = 0;

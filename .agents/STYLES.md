@@ -206,6 +206,7 @@ Logged here as they arise. Each entry: rule, location, justification.
 | Rule                     | Location | Justification |
 |--------------------------|----------|---------------|
 | 17.3 (variadic `printf`) | debug print macro | Debug print macro wrapping libc `printf`; accepted for tooling, keep log level sane |
+| 21.1 (reserved identifiers) | `tests/queue/test_queue.c` (`__wrap_` / `__real_` prefixes) | Symbol names are dictated by GNU ld's `-Wl,--wrap=<symbol>`; the linker defines and redirects only these exact names |
 | §8 (vendor never modified) | *location* | *justification* |
 
 ---

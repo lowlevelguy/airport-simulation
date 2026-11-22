@@ -64,7 +64,7 @@ function(add_cmock_test)
 		ARG                              # Prefix for parsed variables
 		""                               # No boolean flags
 		"NAME"                           # Single-value args: NAME
-		"SOURCES;MOCKS;INCLUDES;COMPILE_DEFS;LIBS"  # Multi-value args
+		"SOURCES;MOCKS;INCLUDES;COMPILE_DEFS;LIBS;LINK_OPTIONS"  # Multi-value args
 		${ARGN}                          # The actual arguments passed to the function
 	)
 	# After parsing, we can access:
@@ -74,6 +74,7 @@ function(add_cmock_test)
 	#   ARG_INCLUDES     = list of directories to add to the include path
 	#   ARG_COMPILE_DEFS = list of -D defines private to this test target
 	#   ARG_LIBS         = extra libraries to link (e.g. Threads::Threads)
+	#   ARG_LINK_OPTIONS = extra linker flags (e.g. -Wl,--wrap=some_function)
 
 	# ---- Generate mocks ----
 	set(MOCK_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/mocks/${ARG_NAME})
@@ -125,41 +126,55 @@ function(add_cmock_test)
 		target_compile_definitions(${ARG_NAME} PRIVATE ${ARG_COMPILE_DEFS})
 	endif ()
 
+	# ---- Optional per-target linker flags (e.g. --wrap for symbol interception) ----
+	if (ARG_LINK_OPTIONS)
+		target_link_options(${ARG_NAME} PRIVATE ${ARG_LINK_OPTIONS})
+	endif ()
+
 	# ---- Register with CTest ----
 	sim_register_test(${ARG_NAME})
 endfunction()
 
 
 # ---- Tests ------------------------------------------------------------------------
-# Add unit tests below. Example:
-#
-#   add_cmock_test(
-#       NAME test_queue
-#       SOURCES
-#           ${CMAKE_CURRENT_SOURCE_DIR}/queue/test_queue.c
-#           ${CMAKE_SOURCE_DIR}/src/queue.c
-#       INCLUDES
-#           ${CMAKE_SOURCE_DIR}/src
-#       LIBS
-#           Threads::Threads
-#   )
-#
-# MOCKS lists headers to generate mocks from, e.g. for a module that calls
-# src/flight.h:
-#
-#       MOCKS
-#           ${CMAKE_SOURCE_DIR}/src/flight.h
-#
-# COMPILE_DEFS reaches a single target only, which makes a per-configuration
-# build of one test source cheap:
-#
-#   foreach (cap 1 3 7 17 255)
-#       add_cmock_test(
-#           NAME test_queue_wrap_${cap}
-#           SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/queue/test_queue_wrap.c
-#                   ${CMAKE_SOURCE_DIR}/src/queue.c
-#           INCLUDES ${CMAKE_SOURCE_DIR}/src
-#           COMPILE_DEFS QUEUE_TEST_CAP=${cap}
-#           LIBS Threads::Threads
-#       )
-#   endforeach ()
+# Add unit tests below, one add_cmock_test() per test target. MOCKS lists headers
+# to generate mocks from; COMPILE_DEFS reaches a single target only.
+add_cmock_test(
+	NAME test_queue
+	SOURCES
+		${CMAKE_CURRENT_SOURCE_DIR}/queue/test_queue.c
+		${CMAKE_SOURCE_DIR}/src/queue.c
+	INCLUDES
+		${CMAKE_SOURCE_DIR}/src
+	LIBS
+		Threads::Threads
+	LINK_OPTIONS
+		-Wl,--wrap=pthread_mutex_destroy
+)
+
+# Every capacity that does not divide 256 exercised a distinct index bug.
+foreach (cap 1 7 255)
+	add_cmock_test(
+		NAME test_queue_wrap_${cap}
+		SOURCES
+			${CMAKE_CURRENT_SOURCE_DIR}/queue/test_queue_wrap.c
+			${CMAKE_SOURCE_DIR}/src/queue.c
+		INCLUDES
+			${CMAKE_SOURCE_DIR}/src
+		COMPILE_DEFS
+			QUEUE_TEST_CAP=${cap}
+		LIBS
+			Threads::Threads
+	)
+endforeach ()
+
+add_cmock_test(
+	NAME test_queue_threads
+	SOURCES
+		${CMAKE_CURRENT_SOURCE_DIR}/queue/test_queue_threads.c
+		${CMAKE_SOURCE_DIR}/src/queue.c
+	INCLUDES
+		${CMAKE_SOURCE_DIR}/src
+	LIBS
+		Threads::Threads
+)
